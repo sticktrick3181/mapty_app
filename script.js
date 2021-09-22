@@ -15,7 +15,7 @@ class App {
   zoomLevel = 15;
   constructor() {
     this._getPosition();
-
+    this._loadLocalStorage();
     form.addEventListener('submit', this._newWorkout.bind(this));
 
     inputType.addEventListener('change', this._toggleElevField);
@@ -36,7 +36,7 @@ class App {
             duration: 1,
           },
         });
-        workoutToFetch.click();
+        // workoutToFetch.click();
       }.bind(this)
     );
   }
@@ -48,6 +48,7 @@ class App {
       }
     );
   }
+
   _loadMap(position) {
     const { latitude, longitude } = position.coords;
     const coordinates = [latitude, longitude];
@@ -61,6 +62,7 @@ class App {
 
     //handling clicks
     this.#map.on('click', this._showForm.bind(this));
+    this.#workouts.forEach(w => this._renderWorkoutMarker(w));
   }
 
   _showForm(mapE) {
@@ -116,12 +118,16 @@ class App {
       }
       //puting the workout into the workouts list
       this.#workouts.push(workout);
-
       //render the workout on the map
       this._renderWorkoutMarker(workout);
       this._renderWorkout(workout);
       this._hideForm();
-      //hide forms and linear input fields
+      //////////////////////////////////////
+      //LOCAL STORAGE
+      this._setLocalStorage();
+
+      {
+      }
     }
   }
 
@@ -160,50 +166,63 @@ class App {
     const html = ` <li class="workout workout--${workout.type}" data-id="${
       workout.id
     }">
-          <h2 class="workout__title">${
-            workout.type[0].toUpperCase() + workout.type.slice(1)
-          } on ${workout.date}</h2>
-          <div class="workout__details">
-            <span class="workout__icon">${
-              workout.type == 'running' ? '🏃‍♂️' : '🚴‍♀️'
-            }</span>
-            <span class="workout__value">${workout.distance}</span>
-            <span class="workout__unit">km</span>
-          </div>
-          <div class="workout__details">
-            <span class="workout__icon">⏱</span>
-            <span class="workout__value">${workout.duration}</span>
-            <span class="workout__unit">min</span>
-          </div>
-          <div class="workout__details">
-            <span class="workout__icon">⚡️</span>
-            <span class="workout__value">${
-              workout.type == 'running'
-                ? workout.pace.toFixed(1)
-                : workout.speed.toFixed(1)
-            }</span>
-            <span class="workout__unit">${
-              workout.type == 'running' ? 'min/km' : 'km/h'
-            }</span>
-          </div>
-          <div class="workout__details">
-            <span class="workout__icon">${
-              workout.type == 'running' ? '🦶🏼' : '⛰'
-            }</span>
-            <span class="workout__value">${
-              workout.type == 'running'
-                ? workout.cadence
-                : workout.elevationGain
-            }</span>
-            <span class="workout__unit">${
-              workout.type == 'running' ? 'spm' : 'm'
-            }</span>
-          </div>
-        </li>`;
+      <h2 class="workout__title">${
+        workout.type[0].toUpperCase() + workout.type.slice(1)
+      } on ${workout.date}</h2>
+      <div class="workout__details">
+      <span class="workout__icon">${
+        workout.type == 'running' ? '🏃‍♂️' : '🚴‍♀️'
+      }</span>
+      <span class="workout__value">${workout.distance}</span>
+      <span class="workout__unit">km</span>
+      </div>
+      <div class="workout__details">
+      <span class="workout__icon">⏱</span>
+      <span class="workout__value">${workout.duration}</span>
+      <span class="workout__unit">min</span>
+      </div>
+      <div class="workout__details">
+      <span class="workout__icon">⚡️</span>
+      <span class="workout__value">${
+        workout.type == 'running'
+          ? workout.pace.toFixed(1)
+          : workout.speed.toFixed(1)
+      }</span>
+      <span class="workout__unit">${
+        workout.type == 'running' ? 'min/km' : 'km/h'
+      }</span>
+      </div>
+      <div class="workout__details">
+      <span class="workout__icon">${
+        workout.type == 'running' ? '🦶🏼' : '⛰'
+      }</span>
+      <span class="workout__value">${
+        workout.type == 'running' ? workout.cadence : workout.elevationGain
+      }</span>
+      <span class="workout__unit">${
+        workout.type == 'running' ? 'spm' : 'm'
+      }</span>
+      </div>
+      </li>`;
     form.insertAdjacentHTML('afterend', html);
   }
   _hideForm() {
     form.classList.add('form__row--hidden');
+  }
+  _setLocalStorage() {
+    ///////////////////////////////
+    //LOCAL STORAGE API
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+  _loadLocalStorage() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    console.log(data);
+    if (!data) return;
+
+    this.#workouts = data;
+    this.#workouts.forEach(w => {
+      this._renderWorkout(w);
+    });
   }
 }
 
@@ -262,6 +281,3 @@ class Cycling extends Workout {
     }
   }
 }
-const run1 = new Running([39, -7], 5.34, 56, 178);
-const cycle1 = new Cycling([39.0045, -7], 5.34, 56, 588);
-console.log(run1, cycle1);
